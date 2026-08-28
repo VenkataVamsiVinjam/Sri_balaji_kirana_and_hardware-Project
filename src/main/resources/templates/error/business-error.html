@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Error</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="alert alert-danger">
+        <h5><i class="bi bi-exclamation-triangle me-2"></i>Something went wrong</h5>
+        <p th:text="${message}">Error message</p>
+        <a href="/dashboard" class="btn btn-primary btn-sm">Back to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>

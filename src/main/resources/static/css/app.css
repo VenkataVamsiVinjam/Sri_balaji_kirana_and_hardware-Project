@@ -1,0 +1,57 @@
+body {
+    background-color: #f4f6f9;
+}
+
+#wrapper {
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    min-width: 250px;
+    min-height: 100vh;
+}
+
+.sidebar .nav-link {
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.card-metric {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card-metric .metric-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.table-low-stock {
+    background-color: #fff3cd !important;
+}
+
+.pos-cart-table th, .pos-cart-table td {
+    vertical-align: middle;
+}
+
+.product-search-result {
+    cursor: pointer;
+}
+
+.product-search-result:hover {
+    background-color: #eef3ff;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+        min-width: 200px;
+    }
+}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>POS / Billing</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-3"><i class="bi bi-cart-check me-2"></i>POS / Billing</h3>
+
+    <div class="row g-3">
+        <!-- Left: Product search + cart -->
+        <div class="col-lg-8">
+            <div class="card card-metric p-3 mb-3">
+                <label class="form-label">Search Product <small class="text-muted">(name or HSN code)</small></label>
+                <input type="text" id="productSearch" class="form-control form-control-lg" placeholder="Type to search..." autocomplete="off">
+                <div id="searchResults" class="list-group mt-2" style="max-height: 260px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="card card-metric p-3">
+                <h6 class="mb-2">Cart</h6>
+                <div class="table-responsive">
+                    <table class="table pos-cart-table">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty (Sale Unit)</th>
+                            <th>Rate</th>
+                            <th>GST%</th>
+                            <th>Line Total</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody id="cartBody"></tbody>
+                        <tr id="emptyCartRow"><td colspan="6" class="text-center text-muted py-3">Cart is empty. Search and add products above.</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Customer, discount, totals, checkout -->
+        <div class="col-lg-4">
+            <div class="card card-metric p-3 mb-3">
+                <label class="form-label">Customer</label>
+                <select id="customerSelect" class="form-select mb-2">
+                    <option value="">Walk-in Customer</option>
+                    <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name} + (${c.outstandingBalance.signum() > 0} ? ' (Due: ₹' + ${#numbers.formatDecimal(c.outstandingBalance,0,'COMMA',2,'POINT')} + ')' : '')"></option>
+                </select>
+                <input type="text" id="walkInName" class="form-control" placeholder="Walk-in customer name (optional)">
+            </div>
+
+            <div class="card card-metric p-3 mb-3">
+                <label class="form-label">Discount</label>
+                <div class="input-group mb-2">
+                    <select id="discountType" class="form-select" style="max-width: 90px;">
+                        <option value="FLAT">₹</option>
+                        <option value="PERCENT">%</option>
+                    </select>
+                    <input type="number" id="discountValue" class="form-control" value="0" min="0" step="0.01">
+                </div>
+            </div>
+
+            <div class="card card-metric p-3 mb-3">
+                <div class="d-flex justify-content-between"><span>Subtotal:</span><strong id="sumSubtotal">₹0.00</strong></div>
+                <div class="d-flex justify-content-between"><span>Discount:</span><strong id="sumDiscount">- ₹0.00</strong></div>
+                <div class="d-flex justify-content-between"><span>CGST:</span><strong id="sumCgst">₹0.00</strong></div>
+                <div class="d-flex justify-content-between"><span>SGST:</span><strong id="sumSgst">₹0.00</strong></div>
+                <hr>
+                <div class="d-flex justify-content-between fs-5"><span>Grand Total:</span><strong id="sumGrandTotal" class="text-primary">₹0.00</strong></div>
+            </div>
+
+            <div class="card card-metric p-3 mb-3">
+                <label class="form-label">Amount Paid Now</label>
+                <input type="number" id="amountPaidNow" class="form-control mb-2" value="0" min="0" step="0.01">
+                <div class="form-check">
+                    <input type="checkbox" id="emailInvoiceCheck" class="form-check-input">
+                    <label class="form-check-label" for="emailInvoiceCheck">Email invoice to customer (if email on file)</label>
+                </div>
+            </div>
+
+            <div class="d-grid">
+                <button id="checkoutBtn" class="btn btn-primary btn-lg" onclick="checkout()">
+                    <i class="bi bi-check-circle me-1"></i>Finalize Bill
+                </button>
+            </div>
+            <div id="checkoutError" class="alert alert-danger mt-2 d-none"></div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+<script th:inline="javascript">
+    // cart entries: { productId, name, saleUnit, gstPercent, price, qty, conversionFactor, availableStockInSaleUnit }
+    let cart = [];
+
+    const searchInput = document.getElementById('productSearch');
+    const searchResults = document.getElementById('searchResults');
+
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        const term = searchInput.value.trim();
+        searchTimeout = setTimeout(() => doSearch(term), 250);
+    });
+
+    function doSearch(term) {
+        fetch('/api/products/search?term=' + encodeURIComponent(term))
+            .then(r => r.json())
+            .then(products => renderSearchResults(products))
+            .catch(() => { searchResults.innerHTML = '<div class="text-danger small p-2">Search failed.</div>'; });
+    }
+
+    function renderSearchResults(products) {
+        if (!products.length) {
+            searchResults.innerHTML = '<div class="text-muted small p-2">No products found.</div>';
+            return;
+        }
+        searchResults.innerHTML = products.map(p => `
+            <a href="#" class="list-group-item list-group-item-action product-search-result" onclick="addToCart(${p.id}); return false;"
+               data-product='${JSON.stringify(p).replace(/'/g, "&apos;")}'>
+                <div class="d-flex justify-content-between">
+                    <span><strong>${p.name}</strong> <small class="text-muted">(${p.hsnCode || '-'})</small></span>
+                    <span>₹${formatInr(p.sellingPrice)} / ${p.saleUnit}</span>
+                </div>
+                <small class="text-muted">Available: ${formatInr(p.availableStockInSaleUnit)} ${p.saleUnit} | GST: ${p.gstPercent}%</small>
+            </a>
+        `).join('');
+    }
+
+    function addToCart(productId) {
+        const el = document.querySelector(`[onclick="addToCart(${productId}); return false;"]`);
+        const product = JSON.parse(el.getAttribute('data-product').replace(/&apos;/g, "'"));
+
+        const existing = cart.find(c => c.productId === product.id);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cart.push({
+                productId: product.id,
+                name: product.name,
+                saleUnit: product.saleUnit,
+                gstPercent: product.gstPercent,
+                price: product.sellingPrice,
+                qty: 1,
+                conversionFactor: product.conversionFactor,
+                availableStockInSaleUnit: product.availableStockInSaleUnit
+            });
+        }
+        searchInput.value = '';
+        searchResults.innerHTML = '';
+        renderCart();
+    }
+
+    function renderCart() {
+        const tbody = document.getElementById('cartBody');
+        const emptyRow = document.getElementById('emptyCartRow');
+        tbody.innerHTML = '';
+
+        if (cart.length === 0) {
+            emptyRow.style.display = '';
+        } else {
+            emptyRow.style.display = 'none';
+        }
+
+        cart.forEach((item, idx) => {
+            const lineTaxable = item.price * item.qty;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.name}</td>
+                <td>
+                    <input type="number" min="0.0001" step="0.0001" value="${item.qty}" class="form-control form-control-sm"
+                           style="width: 100px;" onchange="updateQty(${idx}, this.value)">
+                    <small class="text-muted">${item.saleUnit}</small>
+                </td>
+                <td>
+                    <input type="number" min="0" step="0.01" value="${item.price}" class="form-control form-control-sm"
+                           style="width: 100px;" onchange="updatePrice(${idx}, this.value)">
+                </td>
+                <td>${item.gstPercent}%</td>
+                <td>${formatInrWithSymbol(lineTaxable)}</td>
+                <td><button class="btn btn-sm btn-outline-danger" onclick="removeFromCart(${idx})"><i class="bi bi-x-lg"></i></button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        recalcTotals();
+    }
+
+    function updateQty(idx, value) {
+        cart[idx].qty = parseFloat(value) || 0;
+        renderCart();
+    }
+
+    function updatePrice(idx, value) {
+        cart[idx].price = parseFloat(value) || 0;
+        renderCart();
+    }
+
+    function removeFromCart(idx) {
+        cart.splice(idx, 1);
+        renderCart();
+    }
+
+    function recalcTotals() {
+        let subtotal = 0;
+        cart.forEach(item => subtotal += item.price * item.qty);
+
+        const discountType = document.getElementById('discountType').value;
+        const discountValueInput = parseFloat(document.getElementById('discountValue').value) || 0;
+        let discountAmount = discountType === 'PERCENT' ? (subtotal * discountValueInput / 100) : discountValueInput;
+        if (discountAmount > subtotal) discountAmount = subtotal;
+        if (discountAmount < 0) discountAmount = 0;
+
+        const taxableAfterDiscount = subtotal - discountAmount;
+
+        // Approximate blended GST preview (exact split happens server-side per line)
+        let totalGst = 0;
+        cart.forEach(item => {
+            const lineTaxable = item.price * item.qty;
+            const share = subtotal > 0 ? (lineTaxable / subtotal) * discountAmount : 0;
+            const lineFinalTaxable = lineTaxable - share;
+            totalGst += lineFinalTaxable * item.gstPercent / 100;
+        });
+        const cgst = totalGst / 2;
+        const sgst = totalGst / 2;
+        const grandTotal = taxableAfterDiscount + totalGst;
+
+        document.getElementById('sumSubtotal').textContent = formatInrWithSymbol(subtotal);
+        document.getElementById('sumDiscount').textContent = '- ' + formatInrWithSymbol(discountAmount);
+        document.getElementById('sumCgst').textContent = formatInrWithSymbol(cgst);
+        document.getElementById('sumSgst').textContent = formatInrWithSymbol(sgst);
+        document.getElementById('sumGrandTotal').textContent = formatInrWithSymbol(grandTotal);
+
+        document.getElementById('amountPaidNow').max = grandTotal.toFixed(2);
+    }
+
+    document.getElementById('discountType').addEventListener('change', recalcTotals);
+    document.getElementById('discountValue').addEventListener('input', recalcTotals);
+
+    function checkout() {
+        const errorBox = document.getElementById('checkoutError');
+        errorBox.classList.add('d-none');
+
+        if (cart.length === 0) {
+            errorBox.textContent = 'Cart is empty.';
+            errorBox.classList.remove('d-none');
+            return;
+        }
+
+        const payload = {
+            customerId: document.getElementById('customerSelect').value || null,
+            walkInCustomerName: document.getElementById('walkInName').value || null,
+            discountType: document.getElementById('discountType').value,
+            discountValue: parseFloat(document.getElementById('discountValue').value) || 0,
+            amountPaidNow: parseFloat(document.getElementById('amountPaidNow').value) || 0,
+            emailInvoice: document.getElementById('emailInvoiceCheck').checked,
+            items: cart.map(item => ({
+                productId: item.productId,
+                quantityInSaleUnit: item.qty,
+                sellingPricePerSaleUnitOverride: item.price
+            }))
+        };
+
+        const btn = document.getElementById('checkoutBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Processing...';
+
+        fetch('/api/pos/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(async r => {
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || 'Checkout failed.');
+            return data;
+        })
+        .then(data => {
+            window.location.href = '/invoices/' + data.invoiceId;
+        })
+        .catch(err => {
+            errorBox.textContent = err.message;
+            errorBox.classList.remove('d-none');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Finalize Bill';
+        });
+    }
+</script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,31 @@
+[Unit]
+Description=Sri Balaji Kirana and Hardware ERP
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+# Run as a dedicated, unprivileged user - never as root.
+User=erp
+Group=erp
+WorkingDirectory=/opt/erp
+
+# Load DB/mail secrets from this file (see erp.env.example in this folder).
+EnvironmentFile=/opt/erp/erp.env
+
+ExecStart=/usr/bin/java -jar /opt/erp/erp.jar --spring.profiles.active=prod
+SuccessExitStatus=143
+
+# Restart automatically if the app crashes, but don't loop forever if it's broken.
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Basic hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title th:text="${product.name}">Product</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-3"><i class="bi bi-box-seam me-2"></i><span th:text="${product.name}">Product</span></h3>
+    <div class="card card-metric p-4" style="max-width: 700px;">
+        <table class="table table-borderless mb-0">
+            <tr><th>HSN Code</th><td th:text="${product.hsnCode}">-</td></tr>
+            <tr><th>Category</th><td th:text="${product.category}">-</td></tr>
+            <tr><th>GST %</th><td th:text="${product.gstPercent} + '%'">-</td></tr>
+            <tr><th>Purchase Unit</th><td th:text="${product.purchaseUnit}">-</td></tr>
+            <tr><th>Sale Unit</th><td th:text="${product.saleUnit}">-</td></tr>
+            <tr><th>Conversion Factor</th><td th:text="'1 ' + ${product.purchaseUnit} + ' = ' + ${#numbers.formatDecimal(product.conversionFactor,1,2)} + ' ' + ${product.saleUnit}">-</td></tr>
+            <tr><th>Purchase Price</th><td th:text="'₹' + ${#numbers.formatDecimal(product.purchasePrice, 0, 'COMMA', 2, 'POINT')}">-</td></tr>
+            <tr><th>Selling Price</th><td th:text="'₹' + ${#numbers.formatDecimal(product.sellingPrice, 0, 'COMMA', 2, 'POINT')}">-</td></tr>
+            <tr><th>Current Stock</th><td th:text="${#numbers.formatDecimal(product.currentStock,1,2)} + ' ' + ${product.purchaseUnit}">-</td></tr>
+            <tr><th>Reorder Level</th><td th:text="${#numbers.formatDecimal(product.reorderLevel,1,2)} + ' ' + ${product.purchaseUnit}">-</td></tr>
+        </table>
+        <a href="/products" class="btn btn-outline-secondary mt-3">Back to Products</a>
+    </div>
+</div>
+</body>
+</html>

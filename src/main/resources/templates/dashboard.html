@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Dashboard</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-4"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h3>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-metric p-3">
+                <div class="text-muted small">Today's Sales</div>
+                <div class="metric-value text-success" th:text="'₹' + ${#numbers.formatDecimal(dashboard.todaysSales, 0, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <i class="bi bi-graph-up-arrow text-success"></i>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-metric p-3">
+                <div class="text-muted small">Total Outstanding Dues</div>
+                <div class="metric-value text-danger" th:text="'₹' + ${#numbers.formatDecimal(dashboard.totalOutstandingDues, 0, 'COMMA', 2, 'POINT')}">₹0.00</div>
+                <i class="bi bi-wallet2 text-danger"></i>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-metric p-3">
+                <div class="text-muted small">Low Stock Alerts</div>
+                <div class="metric-value text-warning" th:text="${dashboard.lowStockCount}">0</div>
+                <a href="/reports/stock" class="small">View stock report &rarr;</a>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-metric p-3">
+                <div class="text-muted small">Total Products</div>
+                <div class="metric-value text-primary" th:text="${dashboard.totalProducts}">0</div>
+                <a href="/products" class="small">Manage products &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-metric p-3">
+        <h6 class="mb-3">Last 7 Days - Sales Trend</h6>
+        <canvas id="salesChart" height="90"></canvas>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-md-6">
+            <div class="d-grid">
+                <a href="/pos" class="btn btn-primary btn-lg"><i class="bi bi-cart-check me-2"></i>New Sale (POS)</a>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="d-grid">
+                <a href="/stock-adjustment" class="btn btn-outline-secondary btn-lg"><i class="bi bi-sliders me-2"></i>Adjust Stock</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<th:block layout:fragment="scripts">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        const labels = /*[[${dashboard.last7DaysLabels}]]*/ [];
+        const values = /*[[${dashboard.last7DaysSales}]]*/ [];
+
+        new Chart(document.getElementById('salesChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales (₹)',
+                    data: values,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13,110,253,0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+</th:block>
+</body>
+</html>

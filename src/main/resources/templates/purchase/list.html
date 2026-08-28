@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Purchase Entries</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-bag-plus me-2"></i>Purchase Entries</h3>
+        <a href="/purchase/new" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Purchase</a>
+    </div>
+
+    <div class="card card-metric">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Purchase No.</th>
+                    <th>Supplier</th>
+                    <th>Date</th>
+                    <th>Supplier Invoice Ref</th>
+                    <th>Taxable Value</th>
+                    <th>GST</th>
+                    <th>Grand Total</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="po : ${purchases}">
+                    <td th:text="${po.purchaseNumber}">PUR-0001</td>
+                    <td th:text="${po.supplier.name}">Supplier</td>
+                    <td th:text="${#temporals.format(po.purchaseDate, 'dd-MM-yyyy')}">-</td>
+                    <td th:text="${po.supplierInvoiceRef}">-</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(po.totalTaxableValue, 0, 'COMMA', 2, 'POINT')}">-</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(po.totalGst, 0, 'COMMA', 2, 'POINT')}">-</td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(po.grandTotal, 0, 'COMMA', 2, 'POINT')}">-</td>
+                    <td><a th:href="@{/purchase/view/{id}(id=${po.id})}" class="btn btn-sm btn-outline-secondary">View</a></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(purchases)}">
+                    <td colspan="8" class="text-center text-muted py-4">No purchases recorded yet.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

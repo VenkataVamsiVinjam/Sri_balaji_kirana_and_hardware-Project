@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Purchase Detail</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-3"><i class="bi bi-bag-check me-2"></i><span th:text="${purchase.purchaseNumber}"></span></h3>
+
+    <div class="card card-metric p-3 mb-3">
+        <div class="row">
+            <div class="col-md-4"><strong>Supplier:</strong> <span th:text="${purchase.supplier.name}"></span></div>
+            <div class="col-md-4"><strong>Date:</strong> <span th:text="${#temporals.format(purchase.purchaseDate, 'dd-MM-yyyy')}"></span></div>
+            <div class="col-md-4"><strong>Supplier Ref:</strong> <span th:text="${purchase.supplierInvoiceRef}">-</span></div>
+        </div>
+    </div>
+
+    <div class="card card-metric">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead class="table-light">
+                <tr><th>Product</th><th>Qty (Purchase Unit)</th><th>Price/Unit</th><th>Taxable</th><th>GST%</th><th>GST Amt</th><th>Line Total</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${purchase.items}">
+                    <td th:text="${item.product.name}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.quantityInPurchaseUnit,1,2)} + ' ' + ${item.product.purchaseUnit}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.purchasePricePerUnit, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.taxableValue, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="${item.gstPercent} + '%'"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.gstAmount, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.lineTotal, 0, 'COMMA', 2, 'POINT')}"></td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr class="table-light">
+                    <th colspan="3" class="text-end">Totals:</th>
+                    <th th:text="'₹' + ${#numbers.formatDecimal(purchase.totalTaxableValue, 0, 'COMMA', 2, 'POINT')}"></th>
+                    <th></th>
+                    <th th:text="'₹' + ${#numbers.formatDecimal(purchase.totalGst, 0, 'COMMA', 2, 'POINT')}"></th>
+                    <th th:text="'₹' + ${#numbers.formatDecimal(purchase.grandTotal, 0, 'COMMA', 2, 'POINT')}"></th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    <a href="/purchase" class="btn btn-outline-secondary mt-3">Back to Purchases</a>
+</div>
+</body>
+</html>

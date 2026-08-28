@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Access Denied</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="alert alert-warning">
+        <h5><i class="bi bi-shield-lock me-2"></i>Access Denied</h5>
+        <p>You don't have permission to view this page. This action may be restricted to ADMIN users.</p>
+        <a href="/dashboard" class="btn btn-primary btn-sm">Back to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>

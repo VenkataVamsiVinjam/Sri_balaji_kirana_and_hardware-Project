@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head><title th:text="${partyType.name() == 'CUSTOMER'} ? 'Customers' : 'Suppliers'">Parties</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>
+            <i class="bi bi-people me-2" th:if="${partyType.name() == 'CUSTOMER'}"></i>
+            <i class="bi bi-truck me-2" th:if="${partyType.name() == 'SUPPLIER'}"></i>
+            <span th:text="${partyType.name() == 'CUSTOMER'} ? 'Customers' : 'Suppliers'">Parties</span>
+        </h3>
+        <a th:href="@{/parties/new(type=${partyType})}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Add <span th:text="${partyType.name() == 'CUSTOMER'} ? 'Customer' : 'Supplier'"></span>
+        </a>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-4">
+            <input type="text" name="search" th:value="${search}" class="form-control" placeholder="Search by name...">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100">Search</button>
+        </div>
+    </form>
+
+    <div class="card card-metric">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>GSTIN</th>
+                    <th th:if="${partyType.name() == 'CUSTOMER'}">Outstanding Balance</th>
+                    <th th:if="${partyType.name() == 'SUPPLIER'}">Payable Balance</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${parties}">
+                    <td th:text="${p.name}">Name</td>
+                    <td th:text="${p.phone}">-</td>
+                    <td th:text="${p.email}">-</td>
+                    <td th:text="${p.gstin}">-</td>
+                    <td>
+                        <span th:class="${p.outstandingBalance.signum() > 0} ? 'text-danger fw-bold' : ''"
+                              th:text="'₹' + ${#numbers.formatDecimal(p.outstandingBalance, 0, 'COMMA', 2, 'POINT')}">₹0.00</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/parties/edit/{id}(id=${p.id})}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></a>
+                        <form th:action="@{/parties/delete/{id}(id=${p.id})}" method="post" class="d-inline" sec:authorize="hasRole('ADMIN')"
+                              onsubmit="return confirm('Deactivate this party?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(parties)}">
+                    <td colspan="6" class="text-center text-muted py-4">None found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

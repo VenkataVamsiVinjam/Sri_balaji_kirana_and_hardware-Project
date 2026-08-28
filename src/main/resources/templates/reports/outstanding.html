@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Outstanding Report</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-3"><i class="bi bi-exclamation-diamond me-2"></i>Outstanding Report (Aging)</h3>
+
+    <div class="card card-metric">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Total Outstanding</th>
+                    <th>0-30 Days</th>
+                    <th>30-60 Days</th>
+                    <th>60+ Days</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}">
+                    <td th:text="${row.customerName}"></td>
+                    <td th:text="${row.phone}"></td>
+                    <td class="fw-bold text-danger" th:text="'₹' + ${#numbers.formatDecimal(row.totalOutstanding, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(row.age0to30, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:class="${row.age30to60.signum() > 0} ? 'text-warning fw-bold' : ''" th:text="'₹' + ${#numbers.formatDecimal(row.age30to60, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:class="${row.age60plus.signum() > 0} ? 'text-danger fw-bold' : ''" th:text="'₹' + ${#numbers.formatDecimal(row.age60plus, 0, 'COMMA', 2, 'POINT')}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(rows)}">
+                    <td colspan="6" class="text-center text-muted py-4">No outstanding dues. 🎉</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

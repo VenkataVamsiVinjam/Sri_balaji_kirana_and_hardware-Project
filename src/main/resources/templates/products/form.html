@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title th:text="${product.id} != null ? 'Edit Product' : 'Add Product'">Product Form</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-3">
+        <i class="bi bi-box-seam me-2"></i>
+        <span th:text="${product.id} != null ? 'Edit Product' : 'Add Product'">Product Form</span>
+    </h3>
+
+    <div class="card card-metric p-4" style="max-width: 800px;">
+        <form th:action="@{/products/save}" th:object="${product}" method="post">
+            <input type="hidden" th:field="*{id}">
+
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Product Name *</label>
+                    <input type="text" th:field="*{name}" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">HSN Code</label>
+                    <input type="text" th:field="*{hsnCode}" class="form-control">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Category</label>
+                    <select th:field="*{category}" class="form-select">
+                        <option th:each="c : ${categories}" th:value="${c}" th:text="${c}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">GST % *</label>
+                    <select th:field="*{gstPercent}" class="form-select" required>
+                        <option value="0">0% (Exempt)</option>
+                        <option value="5">5%</option>
+                        <option value="12">12%</option>
+                        <option value="18">18%</option>
+                        <option value="28">28%</option>
+                    </select>
+                </div>
+
+                <div class="col-12"><hr>
+                    <h6 class="text-primary"><i class="bi bi-arrow-left-right me-1"></i>Dual Unit Configuration</h6>
+                    <p class="text-muted small">
+                        Example: You buy in <strong>Coils</strong> but sell in <strong>Meters</strong>.
+                        If 1 Coil = 100 Meters, set Purchase Unit = Coil, Sale Unit = Meter, Conversion Factor = 100.
+                        If the units are the same (e.g. Piece), set Conversion Factor = 1.
+                    </p>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Purchase Unit * <small class="text-muted">(e.g. Coil, Box)</small></label>
+                    <input type="text" th:field="*{purchaseUnit}" class="form-control" placeholder="Coil" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Sale Unit * <small class="text-muted">(e.g. Meter, Piece)</small></label>
+                    <input type="text" th:field="*{saleUnit}" class="form-control" placeholder="Meter" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Conversion Factor *</label>
+                    <input type="number" step="0.0001" th:field="*{conversionFactor}" class="form-control" placeholder="100" required>
+                    <div class="form-text">How many Sale Units = 1 Purchase Unit</div>
+                </div>
+
+                <div class="col-12"><hr></div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Purchase Price (per Purchase Unit) *</label>
+                    <input type="number" step="0.01" th:field="*{purchasePrice}" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Selling Price (per Sale Unit) *</label>
+                    <input type="number" step="0.01" th:field="*{sellingPrice}" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Reorder Level (in Purchase Unit) *</label>
+                    <input type="number" step="0.0001" th:field="*{reorderLevel}" class="form-control" required>
+                </div>
+
+                <div class="col-md-4" th:if="${product.id} != null">
+                    <label class="form-label">Current Stock (Purchase Unit)</label>
+                    <input type="text" th:value="${product.currentStock}" class="form-control" disabled>
+                    <div class="form-text">Only changes via Purchase, Sale, or Stock Adjustment.</div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Product</button>
+                <a href="/products" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

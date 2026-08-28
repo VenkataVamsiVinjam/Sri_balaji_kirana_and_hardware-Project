@@ -1,0 +1,79 @@
+name: Build and Package ERP
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: erp_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build (compile + unit tests)
+        run: mvn -B clean verify
+
+      - name: Package jar
+        run: mvn -B -DskipTests package
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-jar
+          path: target/erp.jar
+          retention-days: 14
+
+  # Uncomment and configure once you have a VPS + SSH secrets set up in
+  # GitHub repo Settings > Secrets and variables > Actions:
+  #   VPS_HOST, VPS_USER, VPS_SSH_KEY
+  #
+  # deploy:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   steps:
+  #     - name: Download build artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: erp-jar
+  #     - name: Copy jar to VPS over SSH
+  #       uses: appleboy/scp-action@v0.1.7
+  #       with:
+  #         host: ${{ secrets.VPS_HOST }}
+  #         username: ${{ secrets.VPS_USER }}
+  #         key: ${{ secrets.VPS_SSH_KEY }}
+  #         source: "erp.jar"
+  #         target: "/opt/erp/"
+  #     - name: Restart service on VPS
+  #       uses: appleboy/ssh-action@v1.0.3
+  #       with:
+  #         host: ${{ secrets.VPS_HOST }}
+  #         username: ${{ secrets.VPS_USER }}
+  #         key: ${{ secrets.VPS_SSH_KEY }}
+  #         script: sudo systemctl restart erp

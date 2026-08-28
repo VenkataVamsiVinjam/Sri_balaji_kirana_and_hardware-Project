@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title th:text="${invoice.formattedInvoiceNumber}">Invoice</title></head>
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3><i class="bi bi-receipt me-2"></i><span th:text="${invoice.formattedInvoiceNumber}"></span></h3>
+        <div>
+            <a th:href="@{/invoices/{id}/pdf(id=${invoice.id})}" target="_blank" class="btn btn-outline-primary">
+                <i class="bi bi-file-earmark-pdf me-1"></i>View / Print PDF
+            </a>
+            <form th:action="@{/invoices/{id}/email(id=${invoice.id})}" method="post" class="d-inline"
+                  th:if="${invoice.customer != null and invoice.customer.email != null}">
+                <button type="submit" class="btn btn-outline-secondary"><i class="bi bi-envelope me-1"></i>Email Invoice</button>
+            </form>
+            <a href="/pos" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Bill</a>
+        </div>
+    </div>
+
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-1"></i>Bill finalized successfully. Stock has been updated.
+    </div>
+
+    <div class="card card-metric p-3 mb-3">
+        <div class="row">
+            <div class="col-md-4">
+                <strong>Customer:</strong>
+                <span th:text="${invoice.customer != null ? invoice.customer.name : invoice.walkInCustomerName}"></span>
+            </div>
+            <div class="col-md-4"><strong>Date:</strong> <span th:text="${#temporals.format(invoice.invoiceDate, 'dd-MM-yyyy HH:mm')}"></span></div>
+            <div class="col-md-4">
+                <strong>Payment Status:</strong>
+                <span class="badge"
+                      th:classappend="${invoice.paymentStatus.name() == 'PAID'} ? 'bg-success' : (${invoice.paymentStatus.name() == 'PARTIALLY_PAID'} ? 'bg-warning text-dark' : 'bg-danger')"
+                      th:text="${invoice.paymentStatus}"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-metric">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead class="table-light">
+                <tr><th>Item</th><th>Qty (Sale Unit)</th><th>Rate</th><th>Taxable</th><th>CGST</th><th>SGST</th><th>Total</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${invoice.items}">
+                    <td th:text="${item.product.name}"></td>
+                    <td th:text="${#numbers.formatDecimal(item.quantityInSaleUnit,1,2)} + ' ' + ${item.product.saleUnit}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.sellingPricePerSaleUnit, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.taxableValue, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.cgstAmount, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.sgstAmount, 0, 'COMMA', 2, 'POINT')}"></td>
+                    <td th:text="'₹' + ${#numbers.formatDecimal(item.lineTotal, 0, 'COMMA', 2, 'POINT')}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="p-3 border-top">
+            <div class="row justify-content-end">
+                <div class="col-md-4">
+                    <div class="d-flex justify-content-between"><span>Taxable Value:</span><span th:text="'₹' + ${#numbers.formatDecimal(invoice.totalTaxableValue, 0, 'COMMA', 2, 'POINT')}"></span></div>
+                    <div class="d-flex justify-content-between" th:if="${invoice.discountAmount.signum() > 0}"><span>Discount:</span><span th:text="'- ₹' + ${#numbers.formatDecimal(invoice.discountAmount, 0, 'COMMA', 2, 'POINT')}"></span></div>
+                    <div class="d-flex justify-content-between"><span>CGST:</span><span th:text="'₹' + ${#numbers.formatDecimal(invoice.totalCgst, 0, 'COMMA', 2, 'POINT')}"></span></div>
+                    <div class="d-flex justify-content-between"><span>SGST:</span><span th:text="'₹' + ${#numbers.formatDecimal(invoice.totalSgst, 0, 'COMMA', 2, 'POINT')}"></span></div>
+                    <hr>
+                    <div class="d-flex justify-content-between fs-5"><strong>Grand Total:</strong><strong th:text="'₹' + ${#numbers.formatDecimal(invoice.grandTotal, 0, 'COMMA', 2, 'POINT')}"></strong></div>
+                    <div class="d-flex justify-content-between"><span>Amount Paid:</span><span th:text="'₹' + ${#numbers.formatDecimal(invoice.amountPaid, 0, 'COMMA', 2, 'POINT')}"></span></div>
+                    <div class="d-flex justify-content-between text-danger"><strong>Balance Due:</strong><strong th:text="'₹' + ${#numbers.formatDecimal(invoice.balanceDue, 0, 'COMMA', 2, 'POINT')}"></strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

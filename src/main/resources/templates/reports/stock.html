@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" layout:decorate="~{layout}"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head><title>Stock Report</title></head>
+<body>
+<div layout:fragment="content">
+    <h3 class="mb-3"><i class="bi bi-clipboard-data me-2"></i>Stock Report</h3>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <select name="category" class="form-select" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                <option th:each="c : ${categories}" th:value="${c}" th:text="${c}" th:selected="${c == selectedCategory}"></option>
+            </select>
+        </div>
+    </form>
+
+    <div class="card card-metric">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Purchase Unit</th>
+                    <th>Current Stock</th>
+                    <th>Reorder Level</th>
+                    <th>Sale Unit Equivalent</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${products}" th:classappend="${p.lowStock} ? 'table-low-stock' : ''">
+                    <td th:text="${p.name}"></td>
+                    <td th:text="${p.category}"></td>
+                    <td th:text="${p.purchaseUnit}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.currentStock,1,2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.reorderLevel,1,2)}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.currentStock.multiply(p.conversionFactor),1,2)} + ' ' + ${p.saleUnit}"></td>
+                    <td>
+                        <span th:if="${p.lowStock}" class="badge bg-warning text-dark">Low Stock</span>
+                        <span th:unless="${p.lowStock}" class="badge bg-success">OK</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(products)}">
+                    <td colspan="7" class="text-center text-muted py-4">No products found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
